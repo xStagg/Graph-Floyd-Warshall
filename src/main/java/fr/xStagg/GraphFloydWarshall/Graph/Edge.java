@@ -24,4 +24,9 @@ public class Edge {
     public Node getTarget() {
         return target;
     }
+
+    @Override
+    public String toString() {
+        return "Edge [id=" + id + ", source=" + source.getId() + ", target=" + target.getId() + "]";
+    }
 }

@@ -1,17 +1,24 @@
 package fr.xStagg.GraphFloydWarshall.Visualization;
 
+import fr.xStagg.GraphFloydWarshall.Graph.Edge;
 import fr.xStagg.GraphFloydWarshall.Graph.Graph;
 import fr.xStagg.GraphFloydWarshall.Graph.Node;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.geom.Path2D;
 import java.util.Random;
 
-public class GraphPanel extends JPanel {
+public class GraphPanel extends JPanel implements MouseListener, MouseMotionListener {
 
     private Graph graph;
     private static final int RADIUS = 30;
+    private static final int ARROW_SIZE = 20;  // Taille de la flèche
     private Random random = new Random();
+    private Node selectedNode;
 
     public GraphPanel(Graph graph) {
         this.graph = graph;
@@ -20,16 +27,23 @@ public class GraphPanel extends JPanel {
         if (graph != null && graph.getNodes() != null) {
             initialiserPositions();
         }
+
+        this.addMouseListener(this);
+        this.addMouseMotionListener(this);
     }
 
     public void setGraph(Graph graph) {
         this.graph = graph;
-        if (graph != null && graph.getNodes() != null) {
+        if (graph != null && graph.getNodes() != null && graph.isRandomPosition()) {
             initialiserPositions();
         } else {
             System.out.println("No graph found");
         }
         repaint();
+    }
+
+    public Graph getGraph() {
+        return graph;
     }
 
     private void initialiserPositions() {
@@ -83,29 +97,16 @@ public class GraphPanel extends JPanel {
         g2d.setColor(new Color(100, 100, 100));
         g2d.setStroke(new BasicStroke(2));
 
-        Node[] nodes = graph.getNodes().toArray(new Node[0]);
+        for(Edge e : graph.getEdges()) {
+            Point source = new Point(e.getSource().getGraphicsX(), e.getSource().getGraphicsY());
+            Point target = new Point(e.getTarget().getGraphicsX(), e.getTarget().getGraphicsY());
 
-        // Parcourir toutes les paires de nœuds
-        for (int i = 0; i < nodes.length; i++) {
-            for (int j = i + 1; j < nodes.length; j++) {
-                Node n1 = nodes[i];
-                Node n2 = nodes[j];
+            // Vérifier que les positions sont valides
+            if (source.x <= 0 || source.y <= 0 || target.x <= 0 || target.y <= 0) continue;
 
-                // Vérifier s'il existe une arête entre n1 et n2
-                // À ADAPTER selon votre implémentation de Graph
-                if (graph.areConnected(n1, n2)) {
-                    if (positionsValides(n1, n2)) {
-                        g2d.drawLine(n1.getGraphicsX(), n1.getGraphicsY(),
-                                n2.getGraphicsX(), n2.getGraphicsY());
-                    }
-                }
-            }
+            // Dessiner la ligne et la flèche ajustées au bord des cercles
+            drawArrow(g2d, source, target);
         }
-    }
-
-    private boolean positionsValides(Node n1, Node n2) {
-        return n1.getGraphicsX() > 0 && n1.getGraphicsY() > 0 &&
-                n2.getGraphicsX() > 0 && n2.getGraphicsY() > 0;
     }
 
     private void drawNodes(Graphics2D g2d) {
@@ -131,7 +132,7 @@ public class GraphPanel extends JPanel {
             // Étiquette du nœud
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.BOLD, 16));
-            String label = String.valueOf((char) ('A' + n.getId()-1));
+            String label = String.valueOf(n.getId());
             FontMetrics fm = g2d.getFontMetrics();
             int labelX = x - fm.stringWidth(label) / 2;
             int labelY = y + fm.getAscent() / 3;
@@ -144,5 +145,121 @@ public class GraphPanel extends JPanel {
             initialiserPositions();
             repaint();
         }
+    }
+
+    /**
+     * Dessine une flèche qui part du bord du cercle source et arrive au bord du cercle cible
+     */
+    private void drawArrow(Graphics2D g2d, Point source, Point target) {
+        // Calculer l'angle entre les deux centres
+        double angle = Math.atan2(target.y - source.y, target.x - source.x);
+
+        // Calculer le point de départ (bord du cercle source)
+        Point start = getPointOnCircle(source, angle, RADIUS);
+
+        // Calculer le point d'arrivée (bord du cercle cible)
+        // Pour le point d'arrivée, on utilise l'angle opposé (source -> target)
+        Point end = getPointOnCircle(target, angle + Math.PI, RADIUS);
+
+        // Dessiner la ligne du bord du cercle source au bord du cercle cible
+        g2d.setColor(Color.BLACK);
+        g2d.drawLine(start.x, start.y, end.x, end.y);
+
+        // Dessiner la tête de flèche au point d'arrivée
+        drawArrowHead(g2d, end, angle);
+    }
+
+    /**
+     * Calcule un point sur le cercle à un angle donné
+     */
+    private Point getPointOnCircle(Point center, double angle, int radius) {
+        int x = center.x + (int) (radius * Math.cos(angle));
+        int y = center.y + (int) (radius * Math.sin(angle));
+        return new Point(x, y);
+    }
+
+    /**
+     * Dessine la tête de flèche orientée
+     */
+    private void drawArrowHead(Graphics2D g2d, Point tip, double directionAngle) {
+        int arrowSize = ARROW_SIZE;
+        int arrowAngle = 25; // degrés
+
+        // Calculer les deux points de la base de la flèche
+        double angle1 = directionAngle + Math.toRadians(180 - arrowAngle);
+        double angle2 = directionAngle + Math.toRadians(180 + arrowAngle);
+
+        Point base1 = new Point(
+                tip.x + (int) (arrowSize * Math.cos(angle1)),
+                tip.y + (int) (arrowSize * Math.sin(angle1))
+        );
+
+        Point base2 = new Point(
+                tip.x + (int) (arrowSize * Math.cos(angle2)),
+                tip.y + (int) (arrowSize * Math.sin(angle2))
+        );
+
+        // Créer le triangle de la flèche
+        Path2D arrowHead = new Path2D.Double();
+        arrowHead.moveTo(tip.x, tip.y);
+        arrowHead.lineTo(base1.x, base1.y);
+        arrowHead.lineTo(base2.x, base2.y);
+        arrowHead.closePath();
+
+        // Remplir la flèche
+        g2d.setColor(Color.RED);
+        g2d.fill(arrowHead);
+
+        // Optionnel : ajouter un contour noir
+        g2d.setColor(Color.BLACK);
+        g2d.setStroke(new BasicStroke(1));
+        g2d.draw(arrowHead);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        Point clickedPoint = e.getPoint();
+        System.out.println("clickedPoint: " + clickedPoint);
+        for (Node n : graph.getNodes()) {
+            Point nodePoint = new Point(n.getGraphicsX(), n.getGraphicsY());
+            if(clickedPoint.distance(nodePoint) < RADIUS) {
+                selectedNode = n;
+            }
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        selectedNode = null;
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if(selectedNode != null) {
+            Point dragPoint = e.getPoint();
+            selectedNode.setGraphicsX(dragPoint.x);
+            selectedNode.setGraphicsY(dragPoint.y);
+            repaint();
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
     }
 }

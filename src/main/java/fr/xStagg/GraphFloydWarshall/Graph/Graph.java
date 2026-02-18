@@ -1,17 +1,17 @@
 package fr.xStagg.GraphFloydWarshall.Graph;
 
-import fr.xStagg.GraphFloydWarshall.Graph.Node;
+import fr.xStagg.GraphFloydWarshall.Utils.LoadingMethod;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class Graph {
 
     // ATTRIBUTES
     private ArrayList<Node> nodes;
     private ArrayList<Edge> edges;
+    private String path;
+    private LoadingMethod loadingMethod;
+    private boolean randomPosition;
 
     public Graph() {
         nodes = new ArrayList<>();
@@ -27,11 +27,21 @@ public class Graph {
     }
 
     public Node getNode(int id) {
-        return nodes.get(id);
+        for(Node node : nodes) {
+            if(node.getId() == id) {
+                return node;
+            }
+        }
+        return null;
     }
 
     public Edge getEdge(int id) {
-        return edges.get(id);
+        for(Edge edge : edges) {
+            if(edge.getId() == id) {
+                return edge;
+            }
+        }
+        return null;
     }
 
     public ArrayList<Node> getNodes() {
@@ -69,6 +79,43 @@ public class Graph {
             }
         }
         return false;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public LoadingMethod getLoadingMethod() {
+        return loadingMethod;
+    }
+
+    public void setLoadingMethod(LoadingMethod loadingMethod) {
+        this.loadingMethod = loadingMethod;
+    }
+
+    public boolean isRandomPosition() {
+        return randomPosition;
+    }
+
+    public void setRandomPosition(boolean randomPosition) {
+        this.randomPosition = randomPosition;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Node node : nodes) {
+            sb.append(node.toString() + "\n");
+        }
+        for (Edge edge : edges) {
+            System.out.println(edge);
+            sb.append(edge.toString() + "\n");
+        }
+        return sb.toString();
     }
 
 }

@@ -1,0 +1,49 @@
+{
+  "oriented": true,
+  "weighted": false,
+  "randomPosition": false,
+  "nodes": [
+    {
+      "id": 1,
+      "graphicsX": 561,
+      "graphicsY": 86
+    },
+    {
+      "id": 2,
+      "graphicsX": 342,
+      "graphicsY": 254
+    },
+    {
+      "id": 3,
+      "graphicsX": 299,
+      "graphicsY": 179
+    },
+    {
+      "id": 4,
+      "graphicsX": 71,
+      "graphicsY": 494
+    }
+  ],
+  "edges": [
+    {
+      "from": 1,
+      "to": 2
+    },
+    {
+      "from": 1,
+      "to": 4
+    },
+    {
+      "from": 2,
+      "to": 4
+    },
+    {
+      "from": 4,
+      "to": 3
+    },
+    {
+      "from": 3,
+      "to": 2
+    }
+  ]
+}
