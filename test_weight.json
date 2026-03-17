@@ -1,0 +1,23 @@
+{
+  "oriented": true,
+  "weighted": false,
+  "randomPosition": false,
+  "nodes": [
+    {
+      "id": 1,
+      "graphicsX": 209,
+      "graphicsY": 379
+    },
+    {
+      "id": 2,
+      "graphicsX": 105,
+      "graphicsY": 118
+    }
+  ],
+  "edges": [
+    {
+      "from": 1,
+      "to": 2
+    }
+  ]
+}

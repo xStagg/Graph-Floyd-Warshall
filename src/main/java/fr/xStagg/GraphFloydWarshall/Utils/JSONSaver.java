@@ -9,17 +9,30 @@ import java.io.*;
 import static fr.xStagg.GraphFloydWarshall.Utils.JSONLoader.readFileFromFolders;
 import static fr.xStagg.GraphFloydWarshall.Utils.JSONLoader.readFileFromResources;
 
+/**
+ * Utilitaire pour sauvegarder l'état d'un graphe dans le fichier JSON
+ * à partir duquel il a été chargé.
+ */
 public class JSONSaver {
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
+    /**
+     * Sauvegarde le graphe donné dans son fichier JSON d'origine, en mettant à jour
+     * les coordonnées graphiques des nœuds et certains champs simples.
+     *
+     * @param graph graphe à sauvegarder
+     * @throws RuntimeException en cas d'erreur d'entrée/sortie ou de parsing JSON
+     */
     public static void saveGraph(Graph graph) {
         // Lire le fichier JSON
         String jsonContent = "";
 
         try {
-            if(graph.getLoadingMethod() == LoadingMethod.RESOURCES) jsonContent = readFileFromResources(graph.getPath());
-            if(graph.getLoadingMethod() == LoadingMethod.FOLDERS) jsonContent = readFileFromFolders(graph.getPath());
+            if (graph.getLoadingMethod() == LoadingMethod.RESOURCES)
+                jsonContent = readFileFromResources(graph.getPath());
+            if (graph.getLoadingMethod() == LoadingMethod.FOLDERS)
+                jsonContent = readFileFromFolders(graph.getPath());
 
             // Parser le JSON en JsonObject
             JsonObject jsonObject = gson.fromJson(jsonContent, JsonObject.class);
@@ -30,7 +43,7 @@ public class JSONSaver {
             }
 
             JsonArray nodesArray = jsonObject.getAsJsonArray("nodes");
-            for(JsonElement nodeJson : nodesArray) {
+            for (JsonElement nodeJson : nodesArray) {
                 JsonObject nodeObject = nodeJson.getAsJsonObject();
                 Node node = graph.getNode(nodeObject.get("id").getAsInt());
                 nodeObject.addProperty("graphicsX", node.getGraphicsX());
@@ -53,4 +66,3 @@ public class JSONSaver {
 
     }
 }
-

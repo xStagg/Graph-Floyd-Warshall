@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    application
 }
 
 group = "fr.xStagg"
@@ -15,6 +16,18 @@ dependencies {
     implementation("com.google.code.gson:gson:2.13.1")
 }
 
+application {
+    mainClass.set("fr.xStagg.GraphFloydWarshall.Main") // or "com.example.Main" if in a package
+}
+
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "fr.xStagg.GraphFloydWarshall.Main" // or "com.example.Main" if in a package
+        )
+    }
 }

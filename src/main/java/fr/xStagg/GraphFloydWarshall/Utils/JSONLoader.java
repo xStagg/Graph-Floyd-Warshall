@@ -6,14 +6,26 @@ import java.nio.charset.StandardCharsets;
 import com.google.gson.*;
 import fr.xStagg.GraphFloydWarshall.Graph.Node;
 
+/**
+ * Utilitaire pour charger un graphe depuis un fichier JSON, que ce soit
+ * depuis le système de fichiers ou depuis les ressources.
+ */
 public class JSONLoader {
 
+    /**
+     * Charge un graphe depuis un fichier JSON situé au chemin donné,
+     * en utilisant la méthode de chargement spécifiée.
+     *
+     * @param path          chemin du fichier JSON (relatif ou absolu)
+     * @param loadingMethod méthode de chargement (ressources ou dossier)
+     * @return graphe chargé ou {@code null} en cas d'erreur d'I/O
+     */
     public static Graph loadGraph(String path, LoadingMethod loadingMethod) {
         try {
 
             String jsonContent = "";
-            if(loadingMethod == LoadingMethod.RESOURCES) jsonContent = readFileFromResources(path);
-            if(loadingMethod == LoadingMethod.FOLDERS) jsonContent = readFileFromFolders(path);
+            if (loadingMethod == LoadingMethod.RESOURCES) jsonContent = readFileFromResources(path);
+            if (loadingMethod == LoadingMethod.FOLDERS) jsonContent = readFileFromFolders(path);
             JsonObject jsonGraph = JsonParser.parseString(jsonContent).getAsJsonObject();
 
             Graph loadedGraph = new Graph();
@@ -21,7 +33,7 @@ public class JSONLoader {
             loadedGraph.setLoadingMethod(loadingMethod);
             loadedGraph.setRandomPosition(jsonGraph.get("randomPosition").getAsBoolean());
 
-            for(JsonElement jsonNode : jsonGraph.get("nodes").getAsJsonArray().asList()) {
+            for (JsonElement jsonNode : jsonGraph.get("nodes").getAsJsonArray().asList()) {
                 int id = jsonNode.getAsJsonObject().get("id").getAsInt();
                 Node newNode = new Node(id);
                 newNode.setGraphicsX(jsonNode.getAsJsonObject().get("graphicsX").getAsInt());
@@ -29,13 +41,19 @@ public class JSONLoader {
                 loadedGraph.addNode(newNode);
 
             }
-            for(JsonElement jsonEdge : jsonGraph.get("edges").getAsJsonArray().asList()) {
+            for (JsonElement jsonEdge : jsonGraph.get("edges").getAsJsonArray().asList()) {
                 int source = jsonEdge.getAsJsonObject().get("from").getAsInt();
                 int target = jsonEdge.getAsJsonObject().get("to").getAsInt();
+                double weight;
+                if (jsonEdge.getAsJsonObject().has("weight")) {
+                    weight = jsonEdge.getAsJsonObject().get("weight").getAsDouble();
+                } else {
+                    weight = 1;
+                }
                 Node sourceNode = loadedGraph.getNode(source);
                 Node targetNode = loadedGraph.getNode(target);
-                if(sourceNode != null && targetNode != null) {
-                    loadedGraph.createEdge(sourceNode, targetNode);
+                if (sourceNode != null && targetNode != null) {
+                    loadedGraph.createEdge(sourceNode, targetNode, weight);
                 } else {
                     System.out.println("Node " + sourceNode + " and Node " + targetNode + " are null");
                 }
@@ -50,12 +68,19 @@ public class JSONLoader {
         }
     }
 
+    /**
+     * Lit le contenu d'un fichier texte depuis le système de fichiers.
+     *
+     * @param path chemin du fichier
+     * @return contenu du fichier sous forme de chaîne
+     * @throws IOException en cas d'erreur de lecture
+     */
     protected static String readFileFromFolders(String path) throws IOException {
         File file = new File(path);
         BufferedReader br = new BufferedReader(new FileReader(file));
         StringBuilder sb = new StringBuilder();
         String line = br.readLine();
-        while(line != null) {
+        while (line != null) {
             sb.append(line);
             line = br.readLine();
         }
@@ -63,6 +88,13 @@ public class JSONLoader {
         return sb.toString();
     }
 
+    /**
+     * Lit le contenu d'un fichier texte situé dans le classpath (resources).
+     *
+     * @param path chemin du fichier dans les ressources
+     * @return contenu du fichier sous forme de chaîne
+     * @throws IOException si le fichier n'est pas trouvé ou en cas d'erreur de lecture
+     */
     protected static String readFileFromResources(String path) throws IOException {
         // Récupérer le chemin du fichier dans resources
         String resourcePath = path;

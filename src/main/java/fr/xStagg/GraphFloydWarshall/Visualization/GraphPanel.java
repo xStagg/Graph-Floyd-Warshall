@@ -9,17 +9,27 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.Random;
 
+/**
+ * Panneau Swing permettant l'affichage graphique d'un graphe orienté
+ * et le déplacement des nœuds à la souris.
+ */
 public class GraphPanel extends JPanel implements MouseListener, MouseMotionListener {
 
     private Graph graph;
     private static final int RADIUS = 30;
-    private static final int ARROW_SIZE = 20;  // Taille de la flèche
+    private static final int ARROW_SIZE = 20; // Taille de la flèche
     private Random random = new Random();
     private Node selectedNode;
 
+    /**
+     * Crée un panneau d'affichage pour le graphe donné.
+     *
+     * @param graph graphe à afficher
+     */
     public GraphPanel(Graph graph) {
         this.graph = graph;
         setBackground(Color.WHITE);
@@ -32,6 +42,12 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         this.addMouseMotionListener(this);
     }
 
+    /**
+     * Met à jour le graphe à afficher et, si demandé, initialise
+     * des positions aléatoires pour ses nœuds.
+     *
+     * @param graph nouveau graphe à afficher
+     */
     public void setGraph(Graph graph) {
         this.graph = graph;
         if (graph != null && graph.getNodes() != null && graph.isRandomPosition()) {
@@ -42,10 +58,9 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         repaint();
     }
 
-    public Graph getGraph() {
-        return graph;
-    }
-
+    /**
+     * Initialise de manière aléatoire les positions graphiques des nœuds du graphe.
+     */
     private void initialiserPositions() {
         if (graph == null || graph.getNodes() == null) return;
 
@@ -55,6 +70,11 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         }
     }
 
+    /**
+     * Redessine le contenu du panneau (nœuds et arêtes).
+     *
+     * @param g contexte graphique
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -73,6 +93,11 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         drawGraph(g2d);
     }
 
+    /**
+     * Dessine les arêtes puis les nœuds du graphe si celui-ci existe.
+     *
+     * @param g2d contexte graphique 2D
+     */
     private void drawGraph(Graphics2D g2d) {
         if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) {
             // Message si pas de graphe
@@ -93,11 +118,16 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         drawNodes(g2d);
     }
 
+    /**
+     * Dessine toutes les arêtes du graphe, avec flèches et poids.
+     *
+     * @param g2d contexte graphique 2D
+     */
     private void drawEdges(Graphics2D g2d) {
         g2d.setColor(new Color(100, 100, 100));
         g2d.setStroke(new BasicStroke(2));
 
-        for(Edge e : graph.getEdges()) {
+        for (Edge e : graph.getEdges()) {
             Point source = new Point(e.getSource().getGraphicsX(), e.getSource().getGraphicsY());
             Point target = new Point(e.getTarget().getGraphicsX(), e.getTarget().getGraphicsY());
 
@@ -106,9 +136,39 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
 
             // Dessiner la ligne et la flèche ajustées au bord des cercles
             drawArrow(g2d, source, target);
+            drawWeight(g2d, source, target, e.getWeight());
         }
     }
 
+    /**
+     * Dessine le poids d'une arête au milieu du segment qui relie ses nœuds.
+     *
+     * @param g2d   contexte graphique 2D
+     * @param source point source
+     * @param target point cible
+     * @param weight poids à afficher
+     */
+    private void drawWeight(Graphics2D g2d, Point source, Point target, double weight) {
+        int stringWidth = g2d.getFontMetrics().stringWidth(String.valueOf(weight));
+        double angle = Math.atan2(target.y - source.y, target.x - source.x);
+        if (source.x > target.x) {
+            angle += Math.PI;
+        }
+        float midX = (float) (target.x + source.x) / 2;
+        float midY = (float) (target.y + source.y) / 2;
+
+        AffineTransform defaultTransform = g2d.getTransform();
+        g2d.rotate(angle, midX, midY);
+        g2d.drawString(String.valueOf(weight), midX - stringWidth / 2, midY - g2d.getFontMetrics().getAscent() / 2);
+        g2d.setTransform(defaultTransform);
+
+    }
+
+    /**
+     * Dessine tous les nœuds du graphe (cercle, bordure, ombre, étiquette).
+     *
+     * @param g2d contexte graphique 2D
+     */
     private void drawNodes(Graphics2D g2d) {
         for (Node n : graph.getNodes()) {
             int x = n.getGraphicsX();
@@ -140,6 +200,9 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         }
     }
 
+    /**
+     * Randomise les positions des nœuds affichés, puis redessine le graphe.
+     */
     public void randomizePositions() {
         if (graph != null && graph.getNodes() != null) {
             initialiserPositions();
@@ -148,7 +211,11 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
     }
 
     /**
-     * Dessine une flèche qui part du bord du cercle source et arrive au bord du cercle cible
+     * Dessine une flèche qui part du bord du cercle source et arrive au bord du cercle cible.
+     *
+     * @param g2d    contexte graphique 2D
+     * @param source centre du nœud source
+     * @param target centre du nœud cible
      */
     private void drawArrow(Graphics2D g2d, Point source, Point target) {
         // Calculer l'angle entre les deux centres
@@ -170,7 +237,12 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
     }
 
     /**
-     * Calcule un point sur le cercle à un angle donné
+     * Calcule un point sur le cercle à un angle donné.
+     *
+     * @param center centre du cercle
+     * @param angle  angle en radians
+     * @param radius rayon du cercle
+     * @return point sur le cercle
      */
     private Point getPointOnCircle(Point center, double angle, int radius) {
         int x = center.x + (int) (radius * Math.cos(angle));
@@ -179,7 +251,11 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
     }
 
     /**
-     * Dessine la tête de flèche orientée
+     * Dessine la tête de flèche orientée à partir de la pointe et de la direction.
+     *
+     * @param g2d            contexte graphique 2D
+     * @param tip            point de la pointe de la flèche
+     * @param directionAngle angle de la direction de l'arête en radians
      */
     private void drawArrowHead(Graphics2D g2d, Point tip, double directionAngle) {
         int arrowSize = ARROW_SIZE;
@@ -221,18 +297,28 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
 
     }
 
+    /**
+     * Sélectionne un nœud lorsqu'on presse la souris à proximité de lui.
+     *
+     * @param e événement de souris
+     */
     @Override
     public void mousePressed(MouseEvent e) {
         Point clickedPoint = e.getPoint();
         System.out.println("clickedPoint: " + clickedPoint);
         for (Node n : graph.getNodes()) {
             Point nodePoint = new Point(n.getGraphicsX(), n.getGraphicsY());
-            if(clickedPoint.distance(nodePoint) < RADIUS) {
+            if (clickedPoint.distance(nodePoint) < RADIUS) {
                 selectedNode = n;
             }
         }
     }
 
+    /**
+     * Libère le nœud sélectionné lorsque le bouton de la souris est relâché.
+     *
+     * @param e événement de souris
+     */
     @Override
     public void mouseReleased(MouseEvent e) {
         selectedNode = null;
@@ -248,9 +334,15 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
 
     }
 
+    /**
+     * Déplace le nœud sélectionné en suivant la position de la souris,
+     * puis redessine le graphe.
+     *
+     * @param e événement de souris
+     */
     @Override
     public void mouseDragged(MouseEvent e) {
-        if(selectedNode != null) {
+        if (selectedNode != null) {
             Point dragPoint = e.getPoint();
             selectedNode.setGraphicsX(dragPoint.x);
             selectedNode.setGraphicsY(dragPoint.y);

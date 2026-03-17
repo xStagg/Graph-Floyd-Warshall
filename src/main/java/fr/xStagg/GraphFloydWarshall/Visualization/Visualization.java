@@ -14,13 +14,27 @@ import fr.xStagg.GraphFloydWarshall.Utils.JSONLoader;
 import fr.xStagg.GraphFloydWarshall.Utils.JSONSaver;
 import fr.xStagg.GraphFloydWarshall.Utils.LoadingMethod;
 
+/**
+ * Fenêtre principale de visualisation d'un graphe, permettant d'afficher
+ * soit le graphe, soit sa matrice d'adjacence, et de charger/sauvegarder
+ * le graphe depuis/vers un fichier JSON.
+ */
 public class Visualization extends JFrame {
 
     private GraphPanel graphPanel;
-    private String activeGraphPath = "";
+    private MatrixPanel matrixPanel;
+    private Graph activeGraph;
+    private JPanel currentPanel;
 
+    /**
+     * Crée une fenêtre de visualisation pour le graphe donné.
+     *
+     * @param graph graphe à visualiser
+     */
     public Visualization(Graph graph) {
         super("Floyd Warshall");
+
+        this.activeGraph = graph;
 
         // Gestionnaire de fermeture
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -62,7 +76,13 @@ public class Visualization extends JFrame {
             chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                 String pathFile = chooser.getSelectedFile().getPath();
-                getGraphPanel().setGraph(JSONLoader.loadGraph(pathFile, LoadingMethod.FOLDERS));
+                activeGraph = JSONLoader.loadGraph(pathFile, LoadingMethod.FOLDERS);
+                if (getGraphPanel() != null) {
+                    getGraphPanel().setGraph(activeGraph);
+                }
+                if (getMatrixPanel() != null) {
+                    getMatrixPanel().setGraph(activeGraph);
+                }
             }
         });
 
@@ -70,33 +90,110 @@ public class Visualization extends JFrame {
         JMenuItem saveItem = new JMenuItem("Save");
         saveItem.setMnemonic(KeyEvent.VK_S);
         saveItem.addActionListener(e -> {
-            JSONSaver.saveGraph(getGraphPanel().getGraph());
+            JSONSaver.saveGraph(activeGraph);
         });
 
+        // === view menu ===
+        JMenu viewMenu = new JMenu("View");
+        viewMenu.setMnemonic(KeyEvent.VK_E);
 
-        // === edit menu ===
-        JMenu editMenu = new JMenu("Edit");
-        editMenu.setMnemonic(KeyEvent.VK_E);
+        // === view menu -> graph view ===
+        JMenuItem graphViewItem = new JMenuItem("Graph View");
+        graphViewItem.setMnemonic(KeyEvent.VK_V);
+        graphViewItem.addActionListener(e -> {
+            // Vérifier si le panel est déjà initialisé
+            if (graphPanel == null) {
+                // Afficher un message de chargement
+                JLabel loadingLabel = new JLabel("Chargement du graphe...", SwingConstants.CENTER);
+                loadingLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                setContentPane(loadingLabel);
+                revalidate();
 
-        // === edit menu -> to matrix ===
-        JMenuItem toMatrixItem = new JMenuItem("To Matrix");
-        toMatrixItem.setMnemonic(KeyEvent.VK_T);
-        toMatrixItem.addActionListener(e -> {});
+                // Charger en arrière-plan
+                new Thread(() -> {
+                    graphPanel = new GraphPanel(activeGraph);
+                    SwingUtilities.invokeLater(() -> {
+                        setContentPane(graphPanel);
+                        revalidate();
+                        repaint();
+                    });
+                }).start();
+            } else {
+                setContentPane(graphPanel);
+                graphPanel.repaint();
+                revalidate();
+            }
+        });
 
-        editMenu.add(toMatrixItem);
+        // === view menu -> matrix view ===
+        JMenuItem matrixViewItem = new JMenuItem("Matrix View");
+        matrixViewItem.setMnemonic(KeyEvent.VK_T);
+        matrixViewItem.addActionListener(e -> {
+            // Vérifier si le panel est déjà initialisé
+            if (matrixPanel == null) {
+                // Afficher un message de chargement
+                JLabel loadingLabel = new JLabel("Chargement de la matrice...", SwingConstants.CENTER);
+                loadingLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                setContentPane(loadingLabel);
+                revalidate();
+
+                // Charger en arrière-plan
+                new Thread(() -> {
+                    matrixPanel = new MatrixPanel(activeGraph);
+                    SwingUtilities.invokeLater(() -> {
+                        setContentPane(matrixPanel);
+                        revalidate();
+                        repaint();
+                    });
+                }).start();
+            } else {
+                setContentPane(matrixPanel);
+                matrixPanel.repaint();
+                revalidate();
+            }
+        });
+
+        // === maths menu ===
+        JMenu mathsMenu = new JMenu("Maths");
+        mathsMenu.setMnemonic(KeyEvent.VK_M);
+
+        // === maths menu -> show degrees ===
+        JMenuItem degreesMathsItem = new JMenuItem("show degrees");
+        degreesMathsItem.setMnemonic(KeyEvent.VK_D);
+        degreesMathsItem.addActionListener(e -> {
+            matrixPanel.showDegrees();
+            matrixPanel.repaint();
+            revalidate();
+        });
+
+        // === maths menu -> apply floyd-warshall
+        JMenuItem floydMathsItem = new JMenuItem("Apply Floyd Warshall");
+        floydMathsItem.setMnemonic(KeyEvent.VK_F);
+        floydMathsItem.addActionListener(e -> {
+            // TODO: implémenter l'appel à l'algorithme de Floyd-Warshall
+        });
+
+        mathsMenu.add(degreesMathsItem);
+
+        viewMenu.add(matrixViewItem);
+        viewMenu.add(graphViewItem);
 
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
 
         menuBar.add(fileMenu);
-        menuBar.add(editMenu);
+        menuBar.add(viewMenu);
+        menuBar.add(mathsMenu);
 
-
-        // Créer le panneau de dessin AVEC le graphe
-        graphPanel = new GraphPanel(graph);
-        setContentPane(graphPanel);
+        // Ne créer qu'un seul panel au début (celui par défaut)
+        matrixPanel = new MatrixPanel(activeGraph);
+        setContentPane(matrixPanel);
+        currentPanel = matrixPanel;
     }
 
+    /**
+     * Affiche la fenêtre de visualisation avec une taille par défaut.
+     */
     public void visualize() {
         SwingUtilities.invokeLater(() -> {
             setSize(800, 600);
@@ -105,7 +202,42 @@ public class Visualization extends JFrame {
         });
     }
 
+    /**
+     * Retourne le graphe actuellement affiché.
+     *
+     * @return graphe actif
+     */
+    public Graph getActiveGraph() {
+        return activeGraph;
+    }
+
+    /**
+     * Modifie le graphe actif et met à jour les panneaux associés.
+     *
+     * @param graph nouveau graphe
+     */
+    public void setActiveGraph(Graph graph) {
+        activeGraph = graph;
+        // Mettre à jour les panels s'ils existent
+        if (graphPanel != null) graphPanel.setGraph(graph);
+        if (matrixPanel != null) matrixPanel.setGraph(graph);
+    }
+
+    /**
+     * Retourne le panneau d'affichage du graphe.
+     *
+     * @return panneau du graphe ou {@code null} s'il n'a pas encore été créé
+     */
     public GraphPanel getGraphPanel() {
         return graphPanel;
+    }
+
+    /**
+     * Retourne le panneau d'affichage de la matrice.
+     *
+     * @return panneau de matrice ou {@code null} s'il n'a pas encore été créé
+     */
+    public MatrixPanel getMatrixPanel() {
+        return matrixPanel;
     }
 }
