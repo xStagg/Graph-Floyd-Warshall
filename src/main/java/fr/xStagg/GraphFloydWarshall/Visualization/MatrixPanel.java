@@ -37,7 +37,7 @@ public class MatrixPanel extends JPanel {
      */
     public MatrixPanel(Graph graph) {
         this.graph = graph;
-        this.matrix = graph != null ? graph.getAdjacencyMatrix() : null;
+        this.matrix = graph != null ? graph.getGraphMatrix() : null;
         if (matrix != null) {
             this.highlight = new boolean[matrix.length][matrix.length];
         }
@@ -87,7 +87,7 @@ public class MatrixPanel extends JPanel {
     public void setGraph(Graph graph) {
         this.graph = graph;
         if (graph != null) {
-            this.matrix = graph.getAdjacencyMatrix();
+            this.matrix = graph.getGraphMatrix();
             if (matrix != null) {
                 this.highlight = new boolean[matrix.length][matrix.length];
             }
@@ -153,7 +153,7 @@ public class MatrixPanel extends JPanel {
                 if (i != 0 || j != 0) {
                     if (i != 0 && j != 0) {
                         int mVal = matrix[i - 1][j - 1];
-                        if (mVal == 100000) {
+                        if (mVal > 99000) {
                             val = "INF";
                         } else {
                             val = Integer.toString(mVal);

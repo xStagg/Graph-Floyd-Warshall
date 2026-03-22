@@ -24,6 +24,7 @@ public class Graph {
     private LoadingMethod loadingMethod;
     private boolean randomPosition;
     private int[][] adjacencyMatrix;
+    private int[][] graphMatrix;
     private int[] inDegrees;
     private int[] outDegrees;
     private int[][][][] floydResult;
@@ -264,6 +265,26 @@ public class Graph {
             computeAdjacencyMatrix();
         }
         return copyMatrix(adjacencyMatrix);
+    }
+
+    private void computeGraphMatrix() {
+        graphMatrix = new int[nodes.size()][nodes.size()];
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                if (nodes.get(i).getSuccessors().contains(nodes.get(j))) {
+                    graphMatrix[i][j] = getEdgeBySrcTrg(i, j).getWeight();
+                } else {
+                    graphMatrix[i][j] = 0;
+                }
+            }
+        }
+    }
+
+    public int[][] getGraphMatrix() {
+        if (graphMatrix == null) {
+            computeGraphMatrix();
+        }
+        return copyMatrix(graphMatrix);
     }
 
     /**
