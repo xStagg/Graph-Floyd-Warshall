@@ -12,20 +12,27 @@ import static fr.xStagg.GraphFloydWarshall.Utils.JSONLoader.readFileFromResource
 /**
  * Utilitaire pour sauvegarder l'état d'un graphe dans le fichier JSON
  * à partir duquel il a été chargé.
+ * <p>
+ * Les coordonnées graphiques ({@code graphicsX}, {@code graphicsY}) de chaque nœud
+ * sont mises à jour, et le champ {@code randomPosition} est passé à {@code false}.
+ * </p>
  */
 public class JSONSaver {
 
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     /**
-     * Sauvegarde le graphe donné dans son fichier JSON d'origine, en mettant à jour
-     * les coordonnées graphiques des nœuds et certains champs simples.
+     * Sauvegarde le graphe donné dans son fichier JSON d'origine.
+     * <p>
+     * Le fichier JSON est relu, les positions des nœuds sont mises à jour,
+     * puis le fichier est réécrit à la même adresse.
+     * </p>
      *
-     * @param graph graphe à sauvegarder
-     * @throws RuntimeException en cas d'erreur d'entrée/sortie ou de parsing JSON
+     * @param graph graphe à sauvegarder ; doit avoir un chemin ({@link Graph#getPath()})
+     *              et une méthode de chargement ({@link Graph#getLoadingMethod()}) valides
+     * @throws RuntimeException encapsulant une {@link IOException} ou une erreur de parsing JSON
      */
     public static void saveGraph(Graph graph) {
-        // Lire le fichier JSON
         String jsonContent = "";
 
         try {
@@ -34,10 +41,8 @@ public class JSONSaver {
             if (graph.getLoadingMethod() == LoadingMethod.FOLDERS)
                 jsonContent = readFileFromFolders(graph.getPath());
 
-            // Parser le JSON en JsonObject
             JsonObject jsonObject = gson.fromJson(jsonContent, JsonObject.class);
 
-            // Modifier des champs simples
             if (jsonObject.has("randomPosition")) {
                 jsonObject.addProperty("randomPosition", false);
             }
@@ -50,19 +55,15 @@ public class JSONSaver {
                 nodeObject.addProperty("graphicsY", node.getGraphicsY());
             }
 
-            // Sauvegarder le JSON modifié
             try (Writer writer = new FileWriter(graph.getPath())) {
                 gson.toJson(jsonObject, writer);
             }
 
             System.out.println("JSON modifié avec succès!");
+            System.out.println("JSON modifié:\n" + gson.toJson(jsonObject));
 
-            // Afficher le résultat
-            System.out.println("JSON modifié:\n" +
-                    gson.toJson(jsonObject));
         } catch (IOException | JsonSyntaxException | JsonIOException e) {
             throw new RuntimeException(e);
         }
-
     }
 }

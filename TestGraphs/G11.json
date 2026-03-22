@@ -1,0 +1,79 @@
+{
+  "oriented": true,
+  "weighted": true,
+  "randomPosition": false,
+  "nodes": [
+    {
+      "id": 0,
+      "graphicsX": 208,
+      "graphicsY": 175
+    },
+    {
+      "id": 1,
+      "graphicsX": 169,
+      "graphicsY": 423
+    },
+    {
+      "id": 2,
+      "graphicsX": 331,
+      "graphicsY": 263
+    },
+    {
+      "id": 3,
+      "graphicsX": 446,
+      "graphicsY": 105
+    },
+    {
+      "id": 4,
+      "graphicsX": 524,
+      "graphicsY": 374
+    }
+  ],
+  "edges": [
+    {
+      "from": 0,
+      "to": 2,
+      "weight": 2
+    },
+    {
+      "from": 0,
+      "to": 3,
+      "weight": 1
+    },
+    {
+      "from": 1,
+      "to": 0,
+      "weight": 1
+    },
+    {
+      "from": 1,
+      "to": 1,
+      "weight": 2
+    },
+    {
+      "from": 1,
+      "to": 2,
+      "weight": 1
+    },
+    {
+      "from": 2,
+      "to": 3,
+      "weight": -2
+    },
+    {
+      "from": 2,
+      "to": 4,
+      "weight": -1
+    },
+    {
+      "from": 3,
+      "to": 4,
+      "weight": 4
+    },
+    {
+      "from": 4,
+      "to": 1,
+      "weight": 3
+    }
+  ]
+}

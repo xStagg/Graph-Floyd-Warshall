@@ -1,0 +1,18 @@
+{
+  "oriented": true,
+  "weighted": true,
+  "randomPosition": false,
+  "nodes": [
+    { "id": 0, "graphicsX": 100, "graphicsY": 200 },
+    { "id": 1, "graphicsX": 300, "graphicsY": 150 },
+    { "id": 2, "graphicsX": 300, "graphicsY": 250 },
+    { "id": 3, "graphicsX": 500, "graphicsY": 200 }
+  ],
+  "edges": [
+    { "from": 0, "to": 1, "weight": 1 },
+    { "from": 0, "to": 2, "weight": 5 },
+    { "from": 1, "to": 2, "weight": -3 },
+    { "from": 1, "to": 3, "weight": 5 },
+    { "from": 2, "to": 3, "weight": 2 }
+  ]
+}

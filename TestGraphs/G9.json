@@ -1,0 +1,21 @@
+{
+  "oriented": true,
+  "weighted": true,
+  "randomPosition": false,
+  "nodes": [
+    { "id": 0, "graphicsX": 100, "graphicsY": 200 },
+    { "id": 1, "graphicsX": 300, "graphicsY": 120 },
+    { "id": 2, "graphicsX": 300, "graphicsY": 200 },
+    { "id": 3, "graphicsX": 300, "graphicsY": 280 },
+    { "id": 4, "graphicsX": 500, "graphicsY": 200 }
+  ],
+  "edges": [
+    { "from": 0, "to": 1, "weight": 1 },
+    { "from": 0, "to": 2, "weight": 2 },
+    { "from": 0, "to": 3, "weight": 1 },
+    { "from": 1, "to": 4, "weight": 3 },
+    { "from": 2, "to": 3, "weight": -2 },
+    { "from": 2, "to": 4, "weight": 1 },
+    { "from": 3, "to": 4, "weight": 4 }
+  ]
+}

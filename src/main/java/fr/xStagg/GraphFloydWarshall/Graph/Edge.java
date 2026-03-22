@@ -10,7 +10,7 @@ public class Edge {
     private int id;
     private Node source;
     private Node target;
-    private double weight;
+    private int weight;
 
     /**
      * Crée une nouvelle arête non pondérée entre deux nœuds.
@@ -31,7 +31,7 @@ public class Edge {
      * @param target nœud cible de l'arête
      * @param weight poids associé à l'arête
      */
-    public Edge(Node source, Node target, double weight) {
+    public Edge(Node source, Node target, int weight) {
         this.id = ID++;
         this.source = source;
         this.target = target;
@@ -70,7 +70,7 @@ public class Edge {
      *
      * @return poids de l'arête
      */
-    public double getWeight() {
+    public int getWeight() {
         return weight;
     }
 
@@ -79,7 +79,7 @@ public class Edge {
      *
      * @param weight nouveau poids
      */
-    public void setWeight(double weight) {
+    public void setWeight(int weight) {
         this.weight = weight;
     }
 

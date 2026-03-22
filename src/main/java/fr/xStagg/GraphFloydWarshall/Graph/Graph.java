@@ -3,10 +3,17 @@ package fr.xStagg.GraphFloydWarshall.Graph;
 import fr.xStagg.GraphFloydWarshall.Utils.LoadingMethod;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static fr.xStagg.GraphFloydWarshall.Utils.MatrixUtils.copyMatrix;
 
 /**
- * Représente un graphe orienté composé de nœuds et d'arêtes, avec des
- * structures associées comme la matrice d'adjacence et les degrés.
+ * Représente un graphe orienté pondéré composé de nœuds ({@link Node}) et d'arêtes ({@link Edge}).
+ * <p>
+ * Fournit les structures associées (matrice d'adjacence, degrés entrants/sortants)
+ * ainsi que l'algorithme de Floyd-Warshall pour le calcul des plus courts chemins.
+ * </p>
  */
 public class Graph {
 
@@ -19,6 +26,8 @@ public class Graph {
     private int[][] adjacencyMatrix;
     private int[] inDegrees;
     private int[] outDegrees;
+    private int[][][][] floydResult;
+    private boolean[][][] floydUpdated;
 
     /**
      * Crée un graphe vide sans nœuds ni arêtes.
@@ -70,6 +79,22 @@ public class Graph {
     public Edge getEdge(int id) {
         for (Edge edge : edges) {
             if (edge.getId() == id) {
+                return edge;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Recherche une arête par ses nœuds source et cible.
+     *
+     * @param id_source identifiant du nœud source
+     * @param id_dest   identifiant du nœud cible
+     * @return arête correspondante ou {@code null} si elle n'existe pas
+     */
+    public Edge getEdgeBySrcTrg(int id_source, int id_dest) {
+        for (Edge edge : edges) {
+            if (edge.getSource().getId() == id_source && edge.getTarget().getId() == id_dest) {
                 return edge;
             }
         }
@@ -129,7 +154,7 @@ public class Graph {
      * @param weight poids de l'arête
      * @return arête créée
      */
-    public Edge createEdge(Node source, Node target, double weight) {
+    public Edge createEdge(Node source, Node target, int weight) {
         Edge edge = new Edge(source, target, weight);
         source.addSuccessor(target);
         target.addPredecessor(source);
@@ -146,8 +171,10 @@ public class Graph {
      * @return {@code true} si une arête existe de source vers cible, sinon {@code false}
      */
     public boolean areConnected(Node source, Node target) {
+        int s = source.getId();
+        int t = target.getId();
         for (Edge edge : edges) {
-            if (edge.getSource().equals(source) && edge.getTarget().equals(target)) {
+            if (edge.getSource().getId() == s && edge.getTarget().getId() == t) {
                 return true;
             }
         }
@@ -209,8 +236,9 @@ public class Graph {
     }
 
     /**
-     * Calcule la matrice d'adjacence du graphe à partir des successeurs
-     * des nœuds.
+     * Calcule la matrice d'adjacence du graphe à partir des successeurs des nœuds.
+     * La valeur {@code adjacencyMatrix[i][j]} vaut 1 si le nœud i a le nœud j comme successeur,
+     * 0 sinon.
      */
     private void computeAdjacencyMatrix() {
         adjacencyMatrix = new int[nodes.size()][nodes.size()];
@@ -227,18 +255,21 @@ public class Graph {
 
     /**
      * Retourne la matrice d'adjacence du graphe, en la calculant si nécessaire.
+     * Retourne une copie pour éviter toute modification externe.
      *
-     * @return matrice d'adjacence
+     * @return copie de la matrice d'adjacence
      */
     public int[][] getAdjacencyMatrix() {
         if (adjacencyMatrix == null) {
             computeAdjacencyMatrix();
         }
-        return adjacencyMatrix;
+        return copyMatrix(adjacencyMatrix);
     }
 
     /**
      * Calcule les degrés entrants et sortants de chaque nœud du graphe.
+     * Le degré entrant d'un nœud est le nombre de ses prédécesseurs,
+     * le degré sortant est le nombre de ses successeurs.
      */
     public void computeDegreesMatrix() {
         inDegrees = new int[nodes.size()];
@@ -254,7 +285,7 @@ public class Graph {
      * Retourne le tableau des degrés entrants des nœuds,
      * en le calculant si nécessaire.
      *
-     * @return tableau des degrés entrants
+     * @return tableau des degrés entrants indexé par position dans la liste des nœuds
      */
     public int[] getInDegrees() {
         if (inDegrees == null) {
@@ -267,7 +298,7 @@ public class Graph {
      * Retourne le tableau des degrés sortants des nœuds,
      * en le calculant si nécessaire.
      *
-     * @return tableau des degrés sortants
+     * @return tableau des degrés sortants indexé par position dans la liste des nœuds
      */
     public int[] getOutDegrees() {
         if (outDegrees == null) {
@@ -277,13 +308,182 @@ public class Graph {
     }
 
     /**
-     * Applique l'algorithme de Floyd-Warshall sur le graphe.
-     * (Méthode à implémenter).
+     * Applique l'algorithme de Floyd-Warshall sur le graphe et retourne
+     * toutes les matrices intermédiaires L^k et P^k.
+     * <p>
+     * Le tableau retourné {@code result} est de dimension {@code [n+1][2][n][n]} où :
+     * <ul>
+     *   <li>{@code result[k][0]} = matrice des distances L à l'étape k</li>
+     *   <li>{@code result[k][1]} = matrice des prédécesseurs P à l'étape k</li>
+     * </ul>
+     * Les distances inatteignables sont codées par {@code 100000} (∞).
+     * </p>
      *
-     * @return graphe éventuellement transformé
+     * @return tableau 4D contenant toutes les étapes de l'algorithme
      */
-    public Graph floydWarshall() {
-        return this;
+    public int[][][][] floydWarshall() {
+        int[][][][] result = new int[nodes.size()+1][2][nodes.size()][nodes.size()];
+
+        int[][] L = getAdjacencyMatrix().clone();
+        int[][] P = new int[nodes.size()][nodes.size()];
+        for(int i = 0; i < L.length; i++) {
+            for(int j = 0; j < L[i].length; j++) {
+                if(i == j) {
+                    L[i][j] = 0;
+                    P[i][j] = -1;
+                } else if (L[i][j] == 1) {
+                    L[i][j] = getEdgeBySrcTrg(nodes.get(i).getId(), nodes.get(j).getId()).getWeight();
+                    P[i][j] = i;
+                } else {
+                    L[i][j] = 100000;
+                    P[i][j] = -1;
+                }
+            }
+        }
+        result[0] = new int[][][]{copyMatrix(L), copyMatrix(P)};
+
+        boolean[][][] updated = new boolean[nodes.size()+1][nodes.size()][nodes.size()];
+
+        for (int k = 0; k < nodes.size(); k++) {
+            for (int i = 0; i < nodes.size(); i++) {
+                for (int j = 0; j < nodes.size(); j++) {
+                    if (L[i][k] != Integer.MAX_VALUE && L[k][j] != Integer.MAX_VALUE &&
+                            L[i][k] + L[k][j] < L[i][j]) {
+
+                        L[i][j] = L[i][k] + L[k][j];
+                        P[i][j] = P[k][j];
+                    }
+                }
+            }
+            result[k+1] = new int[][][]{copyMatrix(L), copyMatrix(P)};
+        }
+        floydResult = result;
+        floydUpdated = updated;
+        return result;
+    }
+
+    /**
+     * Retourne le résultat complet de Floyd-Warshall (toutes les étapes),
+     * en déclenchant le calcul si nécessaire.
+     *
+     * @return tableau 4D des matrices L^k et P^k pour chaque étape k
+     */
+    public int[][][][] getFloydResult() {
+        if(floydResult == null) {
+            floydWarshall();
+        }
+        return floydResult;
+    }
+
+    /**
+     * Retourne la matrice de surlignage indiquant quelles cellules ont été
+     * modifiées à chaque étape de Floyd-Warshall.
+     * Déclenche le calcul si nécessaire.
+     *
+     * @return tableau 3D de booléens {@code updated[k][i][j]}
+     */
+    public boolean[][][] getFloydUpdated() {
+        if(floydUpdated == null) {
+            floydWarshall();
+        }
+        return floydUpdated;
+    }
+
+    /**
+     * Indique si le graphe contient un circuit absorbant (cycle de poids négatif).
+     * Un circuit absorbant est détecté si la diagonale de la matrice finale L^n
+     * contient une valeur strictement négative.
+     * Déclenche Floyd-Warshall si le résultat n'est pas encore calculé.
+     *
+     * @return {@code true} si au moins un circuit absorbant existe, sinon {@code false}
+     */
+    public boolean hasNegativeCycle() {
+        if(floydResult == null) {
+            floydWarshall();
+        }
+        boolean hasNegativeCycle = false;
+        for (int i = 0; i < nodes.size(); i++) {
+            if (floydResult[floydResult.length-1][0][i][i] < 0) {
+                hasNegativeCycle = true;
+                break;
+            }
+        }
+        return hasNegativeCycle;
+    }
+
+    /**
+     * Retourne la liste textuelle de tous les plus courts chemins entre chaque
+     * paire de nœuds (i, j) avec i ≠ j, à partir du résultat de Floyd-Warshall.
+     * Les chemins sont reconstruits via la matrice P finale.
+     * Déclenche Floyd-Warshall si le résultat n'est pas encore calculé.
+     *
+     * @return liste de chaînes au format {@code "src -> dst : n1 -> n2 -> ... (longueur = d)"}
+     */
+    public java.util.List<String> getAllShortestPathsDescriptions() {
+        if (floydResult == null) {
+            floydWarshall();
+        }
+        int[][] L = floydResult[floydResult.length - 1][0];
+        int[][] P = floydResult[floydResult.length - 1][1];
+
+        int n = nodes.size();
+        java.util.List<String> result = new java.util.ArrayList<>();
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) continue;
+                if (L[i][j] >= 100000) continue;
+
+                java.util.List<Integer> path = reconstructPathByIndex(i, j, P);
+                if (!path.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(nodes.get(i).getId())
+                            .append(" -> ")
+                            .append(nodes.get(j).getId())
+                            .append(" : ");
+
+                    for (int k = 0; k < path.size(); k++) {
+                        int idx = path.get(k);
+                        sb.append(nodes.get(idx).getId());
+                        if (k < path.size() - 1) sb.append(" -> ");
+                    }
+                    sb.append(" (longueur = ").append(L[i][j]).append(")");
+                    result.add(sb.toString());
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Reconstruit le chemin entre deux nœuds (par indices 0..n-1)
+     * à partir de la matrice des prédécesseurs P.
+     *
+     * @param start indice du nœud de départ dans la liste des nœuds
+     * @param end   indice du nœud d'arrivée dans la liste des nœuds
+     * @param P     matrice des prédécesseurs issue de Floyd-Warshall
+     * @return liste ordonnée des indices de nœuds formant le chemin,
+     *         ou liste vide si aucun chemin n'existe
+     */
+    private java.util.List<Integer> reconstructPathByIndex(int start, int end, int[][] P) {
+        if (start == end) {
+            return java.util.List.of(start);
+        }
+        if (P[start][end] == -1) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.List<Integer> path = new java.util.ArrayList<>();
+        int current = end;
+        while (current != start) {
+            path.add(current);
+            current = P[start][current];
+            if (current == -1) {
+                return java.util.Collections.emptyList();
+            }
+        }
+        path.add(start);
+        java.util.Collections.reverse(path);
+        return path;
     }
 
     /**
