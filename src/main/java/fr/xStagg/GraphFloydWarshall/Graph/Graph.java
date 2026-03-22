@@ -347,9 +347,10 @@ public class Graph {
 
         int[][] L = getAdjacencyMatrix().clone();
         int[][] P = new int[nodes.size()][nodes.size()];
-        for(int i = 0; i < L.length; i++) {
-            for(int j = 0; j < L[i].length; j++) {
-                if(i == j) {
+
+        for (int i = 0; i < L.length; i++) {
+            for (int j = 0; j < L[i].length; j++) {
+                if (i == j) {
                     L[i][j] = 0;
                     P[i][j] = -1;
                 } else if (L[i][j] == 1) {
@@ -361,23 +362,32 @@ public class Graph {
                 }
             }
         }
+
         result[0] = new int[][][]{copyMatrix(L), copyMatrix(P)};
 
         boolean[][][] updated = new boolean[nodes.size()+1][nodes.size()][nodes.size()];
 
         for (int k = 0; k < nodes.size(); k++) {
+            int[][] L_new = copyMatrix(L);  // copie pour ne pas modifier L en cours d'itération
+            int[][] P_new = copyMatrix(P);  // copie pour ne pas modifier P en cours d'itération
+
             for (int i = 0; i < nodes.size(); i++) {
                 for (int j = 0; j < nodes.size(); j++) {
-                    if (L[i][k] != Integer.MAX_VALUE && L[k][j] != Integer.MAX_VALUE &&
+                    if (L[i][k] != 100000 && L[k][j] != 100000 &&
                             L[i][k] + L[k][j] < L[i][j]) {
 
-                        L[i][j] = L[i][k] + L[k][j];
-                        P[i][j] = P[k][j];
+                        L_new[i][j] = L[i][k] + L[k][j];
+                        P_new[i][j] = P[k][j];
+                        updated[k+1][i][j] = true;
                     }
                 }
             }
+
+            L = L_new;
+            P = P_new;
             result[k+1] = new int[][][]{copyMatrix(L), copyMatrix(P)};
         }
+
         floydResult = result;
         floydUpdated = updated;
         return result;
