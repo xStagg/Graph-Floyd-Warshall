@@ -338,15 +338,17 @@ public class Graph {
      *   <li>{@code result[k][1]} = matrice des prédécesseurs P à l'étape k</li>
      * </ul>
      * Les distances inatteignables sont codées par {@code 100000} (∞).
+     * Chaque étape est tracée dans la console pour le suivi de l'exécution.
      * </p>
      *
      * @return tableau 4D contenant toutes les étapes de l'algorithme
      */
     public int[][][][] floydWarshall() {
-        int[][][][] result = new int[nodes.size()+1][2][nodes.size()][nodes.size()];
+        int n = nodes.size();
+        int[][][][] result = new int[n+1][2][n][n];
 
         int[][] L = getAdjacencyMatrix().clone();
-        int[][] P = new int[nodes.size()][nodes.size()];
+        int[][] P = new int[n][n];
 
         for (int i = 0; i < L.length; i++) {
             for (int j = 0; j < L[i].length; j++) {
@@ -365,32 +367,134 @@ public class Graph {
 
         result[0] = new int[][][]{copyMatrix(L), copyMatrix(P)};
 
-        boolean[][][] updated = new boolean[nodes.size()+1][nodes.size()][nodes.size()];
+        // --- Trace initiale ---
+        System.out.println("=".repeat(60));
+        System.out.println("  ALGORITHME DE FLOYD-WARSHALL");
+        System.out.println("  Graphe : " + n + " sommets, " + edges.size() + " arêtes");
+        System.out.println("=".repeat(60));
+        printFloydStep(L, P, 0, -1, n);
 
-        for (int k = 0; k < nodes.size(); k++) {
-            int[][] L_new = copyMatrix(L);  // copie pour ne pas modifier L en cours d'itération
-            int[][] P_new = copyMatrix(P);  // copie pour ne pas modifier P en cours d'itération
+        boolean[][][] updated = new boolean[n+1][n][n];
 
-            for (int i = 0; i < nodes.size(); i++) {
-                for (int j = 0; j < nodes.size(); j++) {
+        for (int k = 0; k < n; k++) {
+            int[][] L_new = copyMatrix(L);
+            int[][] P_new = copyMatrix(P);
+
+            System.out.println("\n" + "=".repeat(60));
+            System.out.println("  Étape k = " + (k+1) + " — Sommet intermédiaire autorisé : " + nodes.get(k).getId());
+            System.out.println("=".repeat(60));
+
+            boolean anyUpdate = false;
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
                     if (L[i][k] != 100000 && L[k][j] != 100000 &&
                             L[i][k] + L[k][j] < L[i][j]) {
 
+                        int oldVal = L[i][j];
                         L_new[i][j] = L[i][k] + L[k][j];
                         P_new[i][j] = P[k][j];
                         updated[k+1][i][j] = true;
+                        anyUpdate = true;
+
+                        // Trace de chaque mise à jour
+                        System.out.printf("  Mise à jour [%d][%d] : %s + %d = %d  (ancien : %s)  → P[%d][%d] = %d%n",
+                                nodes.get(i).getId(),
+                                nodes.get(j).getId(),
+                                oldVal == 100000 ? "INF" : String.valueOf(oldVal),
+                                L[i][k] + L[k][j] - (oldVal == 100000 ? 0 : 0), // juste pour la syntaxe
+                                L[i][k] + L[k][j],
+                                oldVal == 100000 ? "INF" : String.valueOf(oldVal),
+                                nodes.get(i).getId(),
+                                nodes.get(j).getId(),
+                                nodes.get(P[k][j]).getId()
+                        );
                     }
                 }
+            }
+
+            if (!anyUpdate) {
+                System.out.println("  (aucune mise à jour à cette étape)");
             }
 
             L = L_new;
             P = P_new;
             result[k+1] = new int[][][]{copyMatrix(L), copyMatrix(P)};
+
+            printFloydStep(L, P, k+1, nodes.get(k).getId(), n);
+        }
+
+        // --- Résumé final ---
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("  RÉSULTAT FINAL");
+        System.out.println("=".repeat(60));
+
+        boolean hasNeg = false;
+        for (int i = 0; i < n; i++) {
+            if (L[i][i] < 0) { hasNeg = true; break; }
+        }
+        System.out.println("  Circuit absorbant : " + (hasNeg ? "OUI ⚠" : "NON ✓"));
+
+        if (!hasNeg) {
+            System.out.println("\n  Plus courts chemins :");
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (i == j) continue;
+                    if (L[i][j] >= 100000) continue;
+                    System.out.printf("    %d -> %d  |  distance = %d%n",
+                            nodes.get(i).getId(), nodes.get(j).getId(), L[i][j]);
+                }
+            }
         }
 
         floydResult = result;
         floydUpdated = updated;
         return result;
+    }
+
+    /**
+     * Affiche dans la console les matrices L^k et P^k à une étape donnée
+     * de l'algorithme de Floyd-Warshall, avec en-têtes et formatage aligné.
+     *
+     * @param L            matrice des distances à afficher
+     * @param P            matrice des prédécesseurs à afficher
+     * @param k            indice de l'étape courante (0 = initialisation)
+     * @param intermediate identifiant du sommet intermédiaire autorisé (-1 pour l'initialisation)
+     * @param n            nombre de sommets du graphe
+     */
+    private void printFloydStep(int[][] L, int[][] P, int k, int intermediate, int n) {
+        String title = (k == 0)
+                ? "\n  --- L^0 et P^0 (initialisation) ---"
+                : "\n  --- L^" + k + " et P^" + k + " (après sommet " + intermediate + ") ---";
+        System.out.println(title);
+
+        // En-tête colonnes
+        System.out.print("       ");
+        for (int j = 0; j < n; j++) {
+            System.out.printf("%6d", nodes.get(j).getId());
+        }
+        System.out.println();
+
+        // Séparateur
+        System.out.println("  L^" + k + " :");
+        for (int i = 0; i < n; i++) {
+            System.out.printf("    %2d |", nodes.get(i).getId());
+            for (int j = 0; j < n; j++) {
+                if (L[i][j] == 100000) System.out.printf("%6s", "INF");
+                else                   System.out.printf("%6d", L[i][j]);
+            }
+            System.out.println();
+        }
+
+        System.out.println("  P^" + k + " :");
+        for (int i = 0; i < n; i++) {
+            System.out.printf("    %2d |", nodes.get(i).getId());
+            for (int j = 0; j < n; j++) {
+                if (P[i][j] == -1) System.out.printf("%6s", "-1");
+                else               System.out.printf("%6d", nodes.get(P[i][j]).getId());
+            }
+            System.out.println();
+        }
     }
 
     /**
