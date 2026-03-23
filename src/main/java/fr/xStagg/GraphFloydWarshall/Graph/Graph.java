@@ -353,8 +353,14 @@ public class Graph {
         for (int i = 0; i < L.length; i++) {
             for (int j = 0; j < L[i].length; j++) {
                 if (i == j) {
-                    L[i][j] = 0;
-                    P[i][j] = -1;
+                    Edge selfLoop = getEdgeBySrcTrg(nodes.get(i).getId(), nodes.get(j).getId());
+                    if (selfLoop != null) {
+                        L[i][j] = selfLoop.getWeight();  // peut être négatif
+                        P[i][j] = i;
+                    } else {
+                        L[i][j] = 0;
+                        P[i][j] = -1;
+                    }
                 } else if (L[i][j] == 1) {
                     L[i][j] = getEdgeBySrcTrg(nodes.get(i).getId(), nodes.get(j).getId()).getWeight();
                     P[i][j] = i;
