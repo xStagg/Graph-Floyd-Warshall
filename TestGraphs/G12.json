@@ -15,9 +15,9 @@
     { "from": 1, "to": 0, "weight": 1 },
     { "from": 1, "to": 4, "weight": 1 },
     { "from": 2, "to": 3, "weight": -2 },
-    { "from": 2, "to": 4, "weight": -1 },
     { "from": 3, "to": 2, "weight": 7 },
     { "from": 3, "to": 4, "weight": 4 },
-    { "from": 4, "to": 1, "weight": 3 }
+    { "from": 4, "to": 1, "weight": 3 },
+    { "from": 4, "to": 2, "weight": -1 }
   ]
 }

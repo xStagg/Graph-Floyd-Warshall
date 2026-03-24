@@ -5,28 +5,28 @@
   "nodes": [
     {
       "id": 0,
-      "graphicsX": 208,
-      "graphicsY": 175
+      "graphicsX": 126,
+      "graphicsY": 254
     },
     {
       "id": 1,
-      "graphicsX": 169,
-      "graphicsY": 423
+      "graphicsX": 352,
+      "graphicsY": 90
     },
     {
       "id": 2,
-      "graphicsX": 331,
-      "graphicsY": 263
+      "graphicsX": 338,
+      "graphicsY": 268
     },
     {
       "id": 3,
-      "graphicsX": 446,
-      "graphicsY": 105
+      "graphicsX": 319,
+      "graphicsY": 442
     },
     {
       "id": 4,
-      "graphicsX": 524,
-      "graphicsY": 374
+      "graphicsX": 605,
+      "graphicsY": 249
     }
   ],
   "edges": [
@@ -51,19 +51,9 @@
       "weight": 2
     },
     {
-      "from": 1,
-      "to": 2,
-      "weight": 1
-    },
-    {
       "from": 2,
       "to": 3,
       "weight": -2
-    },
-    {
-      "from": 2,
-      "to": 4,
-      "weight": -1
     },
     {
       "from": 3,
@@ -74,6 +64,11 @@
       "from": 4,
       "to": 1,
       "weight": 3
+    },
+    {
+      "from": 4,
+      "to": 2,
+      "weight": -1
     }
   ]
 }

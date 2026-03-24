@@ -354,7 +354,7 @@ public class Graph {
             for (int j = 0; j < L[i].length; j++) {
                 if (i == j) {
                     Edge selfLoop = getEdgeBySrcTrg(nodes.get(i).getId(), nodes.get(j).getId());
-                    if (selfLoop != null) {
+                    if (selfLoop != null && selfLoop.getWeight() < 0) {
                         L[i][j] = selfLoop.getWeight();  // peut être négatif
                         P[i][j] = i;
                     } else {
